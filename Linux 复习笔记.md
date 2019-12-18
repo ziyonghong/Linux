@@ -348,7 +348,29 @@ Linux内核映像被装入在物理地址0x00100000开始的地方 内核映像�
 
 1.小任务机制
 
-对要推迟执行的函数进行组织的一种机制，其数据结构为tasklet_struct,推迟处理的事情由tasklet_handler实现，何时执行，由小任务机制封装后交给内核去处理。
+对要推迟执行的函数进行组织的一种机制，其数据结构为tasklet_struct,每一个结构代表一个小任务。
+
+```c++
+struct tasklet_struct{
+    struct tasklet_struct *next; //指向链表中的下一个结构
+    unsigned long state; //小任务的状态
+    atomic_t count; //引用计数器
+    void (* func) (unsigned long); //要调用的函数
+    unsigned long data; //传递给函数的参数
+ }
+```
+
+可以静态或动态地创建它，小任务处理程序 
+
+```c++
+void tasklet_handler（undigned long data）;
+```
+
+由于小任务不能睡眠，因此不能在小任务中使用信号量或者其他产生阻塞的函数，但是小任务在运行时可以响应中断。
+
+通过tasklet_schedule(&my_tasklet) 函数并传递给它响应的tasklet_struct指针调度小任务，小任务被调度后，只要有机会它就会尽可能早的运行。
+
+
 
 2.工作队列机制
 
